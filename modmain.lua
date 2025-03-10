@@ -137,7 +137,13 @@ end
 AddSimPostInit(function()
     -- 使用配置的延迟时间
     GLOBAL.TheWorld:DoTaskInTime(START_DELAY, function()
-        -- 使用配置的间隔时间
-        GLOBAL.TheWorld:DoPeriodicTask(STACK_INTERVAL, EnhancedStackItems)
+        -- 处理0秒间隔的特殊情况
+        if STACK_INTERVAL <= 0 then
+            -- 每帧执行一次堆叠
+            GLOBAL.TheWorld:DoPeriodicTask(0, EnhancedStackItems)
+        else
+            -- 使用配置的间隔时间
+            GLOBAL.TheWorld:DoPeriodicTask(STACK_INTERVAL, EnhancedStackItems)
+        end
     end)
 end) 
