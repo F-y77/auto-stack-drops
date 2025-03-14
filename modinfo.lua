@@ -9,7 +9,7 @@ local is_chinese = GetLanguage():find("zh") ~= nil
 name = is_chinese and "自动堆叠掉落物" or "Auto Stack Items"
 description = is_chinese and "自动将附近的同类掉落物堆叠在一起" or "Automatically stack nearby similar items"
 author = "Va6gn"
-version = "1.1.0"
+version = "1.2.0"
 
 -- DST 兼容性
 dst_compatible = true
@@ -49,7 +49,19 @@ local config_labels = {
     seconds = function(n) return is_chinese and n.."秒" or n.." seconds" end,
     zero_seconds = is_chinese and "0秒" or "0 seconds",
     instant = is_chinese and "立即" or "Instant",
-    tiles = function(n) return is_chinese and n.."格" or n.." tiles" end
+    tiles = function(n) return is_chinese and n.."格" or n.." tiles" end,
+    stack_delay = is_chinese and "延迟堆叠" or "Stack Delay",
+    stack_delay_hover = is_chinese and "开启后物品会逐个堆叠，确保特殊效果能正确触发" or "Items will stack one by one to ensure special effects trigger correctly",
+    stack_delay_on = is_chinese and "开启" or "Enable",
+    stack_delay_off = is_chinese and "关闭" or "Disable",
+    stack_delay_on_hover = is_chinese and "物品会逐个堆叠" or "Items will stack one by one",
+    stack_delay_off_hover = is_chinese and "物品会立即堆叠" or "Items will stack instantly",
+    allow_mob_stack = is_chinese and "允许生物堆叠" or "Allow Mob Stacking",
+    allow_mob_stack_hover = is_chinese and "是否允许生物（如萤火虫等）进行堆叠" or "Whether to allow stacking of creatures (like fireflies)",
+    allow_mob_stack_on = is_chinese and "允许" or "Allow",
+    allow_mob_stack_off = is_chinese and "禁止" or "Disallow",
+    allow_mob_stack_on_hover = is_chinese and "生物可以堆叠" or "Creatures can be stacked",
+    allow_mob_stack_off_hover = is_chinese and "生物不会堆叠" or "Creatures will not be stacked"
 }
 
 -- mod配置选项
@@ -109,5 +121,25 @@ configuration_options = {
             {description = config_labels.balanced, data = "balanced", hover = config_labels.balanced_hover}
         },
         default = "most_first"
-    }
+    },
+    {
+        name = "STACK_DELAY",
+        label = config_labels.stack_delay,
+        hover = config_labels.stack_delay_hover,
+        options = {
+            {description = config_labels.stack_delay_on, data = true, hover = config_labels.stack_delay_on_hover},
+            {description = config_labels.stack_delay_off, data = false, hover = config_labels.stack_delay_off_hover},
+        },
+        default = true,
+    },
+    {
+        name = "ALLOW_MOB_STACK",
+        label = config_labels.allow_mob_stack,
+        hover = config_labels.allow_mob_stack_hover,
+        options = {
+            {description = config_labels.allow_mob_stack_on, data = true, hover = config_labels.allow_mob_stack_on_hover},
+            {description = config_labels.allow_mob_stack_off, data = false, hover = config_labels.allow_mob_stack_off_hover},
+        },
+        default = false,
+    },
 } 
