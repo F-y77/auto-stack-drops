@@ -9,6 +9,18 @@ local STACK_INTERVAL = GetModConfigData("STACK_INTERVAL")
 local STACK_RADIUS = GetModConfigData("STACK_RADIUS")
 local START_DELAY = GetModConfigData("START_DELAY")
 local SORT_METHOD = GetModConfigData("SORT_METHOD")
+local ENABLE_STACK_DELAY = GetModConfigData("STACK_DELAY")
+local ALLOW_MOB_STACK = GetModConfigData("ALLOW_MOB_STACK")
+
+-- 在文件开头添加物品生成时间记录
+-- 添加到AddPrefabPostInit之前
+local function RecordSpawnTime(inst)
+    if inst.components.stackable then
+        inst.spawn_time = GLOBAL.GetTime()
+    end
+end
+
+AddPrefabPostInit("", RecordSpawnTime)
 
 -- 执行堆叠的优化函数
 local function EnhancedStackItems()
@@ -26,18 +38,29 @@ local function EnhancedStackItems()
             -- 获取玩家位置
             local x, y, z = player.Transform:GetWorldPosition()
             
-            -- 获取附近物品
-            local items = GLOBAL.TheSim:FindEntities(x, y, z, STACK_RADIUS, {"_inventoryitem"})
+            -- 修改查找条件，明确只查找掉落物
+            local items = GLOBAL.TheSim:FindEntities(x, y, z, STACK_RADIUS, 
+                {"_inventoryitem"}, -- 必须是物品
+                {"INLIMBO", "NOCLICK", "catchable", "fire"} -- 排除这些标签
+            )
             
             -- 分组
             local grouped = {}
             for _, item in ipairs(items) do
-                -- 基本安全检查
+                -- 增加更多安全检查
                 if item and item:IsValid() and item.prefab and 
                    item.components and item.components.stackable and 
                    not item.components.stackable:IsFull() and
                    item.components.inventoryitem and 
-                   not item.components.inventoryitem:IsHeld() then
+                   not item.components.inventoryitem:IsHeld() and
+                   not item:HasTag("INLIMBO") and
+                   -- 根据配置决定是否检查生物相关的条件
+                   (ALLOW_MOB_STACK or (
+                       not item:HasTag("mob") and
+                       not item:HasTag("firefly") and
+                       not item.components.health and
+                       not item.components.locomotor
+                   )) then
                     
                     if not grouped[item.prefab] then
                         grouped[item.prefab] = {}
@@ -47,7 +70,7 @@ local function EnhancedStackItems()
             end
             
             -- 对每种物品类型进行堆叠
-            for _, group in pairs(grouped) do
+            for prefab, group in pairs(grouped) do
                 if #group > 1 then
                     -- 根据配置的排序方法进行排序
                     if SORT_METHOD == "most_first" then
@@ -68,61 +91,47 @@ local function EnhancedStackItems()
                         end
                         local average = total / #group
                         
-                        -- 按照与平均值的差距排序（差距小的优先）
+                        -- 按照与平均值的差距排序
                         table.sort(group, function(a, b)
                             return math.abs(a.components.stackable.stacksize - average) < 
                                    math.abs(b.components.stackable.stacksize - average)
                         end)
+                    elseif SORT_METHOD == "old_to_new" then
+                        -- 从老到新排序，使用实体的创建时间
+                        table.sort(group, function(a, b)
+                            -- 获取物品的存在时间（如果没有则使用当前时间）
+                            local a_time = a.spawn_time or GLOBAL.GetTime()
+                            local b_time = b.spawn_time or GLOBAL.GetTime()
+                            -- 较新的物品（时间值大）放在前面作为目标
+                            return b_time < a_time
+                        end)
+                    elseif SORT_METHOD == "new_to_old" then
+                        -- 从新到老排序，使用实体的创建时间
+                        table.sort(group, function(a, b)
+                            return a.spawn_time < b.spawn_time
+                        end)
                     end
                     
                     -- 从第一个物品开始，尝试将其他物品堆叠到它上面
-                    local target_index = 1
-                    local target = group[target_index]
-                    
-                    -- 一次性处理所有可堆叠的物品
-                    for i = 1, #group do
-                        -- 跳过目标自身
-                        if i ~= target_index then
-                            local item = group[i]
-                            
-                            if target and target:IsValid() and 
-                               item and item:IsValid() then
-                                
-                                -- 计算可堆叠数量
-                                local space = target.components.stackable.maxsize - target.components.stackable.stacksize
-                                
-                                if space > 0 then
-                                    -- 执行堆叠
-                                    local amount = math.min(space, item.components.stackable.stacksize)
-                                    target.components.stackable:SetStackSize(target.components.stackable.stacksize + amount)
-                                    
-                                    if amount >= item.components.stackable.stacksize then
-                                        -- 如果完全堆叠，移除物品
-                                        item:Remove()
-                                    else
-                                        -- 否则减少物品的堆叠数量
-                                        item.components.stackable:SetStackSize(item.components.stackable.stacksize - amount)
-                                    end
-                                    
-                                    -- 如果目标已满，选择下一个有效物品作为新目标
-                                    if target.components.stackable:IsFull() then
-                                        -- 寻找下一个有效目标
-                                        local found_new_target = false
-                                        for j = 1, #group do
-                                            if j ~= i and group[j] and group[j]:IsValid() and 
-                                               not group[j].components.stackable:IsFull() then
-                                                target_index = j
-                                                target = group[j]
-                                                found_new_target = true
-                                                break
-                                            end
-                                        end
-                                        
-                                        -- 如果没有找到新目标，结束堆叠
-                                        if not found_new_target then
-                                            break
+                    local target = group[1]
+                    for i = 2, #group do
+                        local item = group[i]
+                        if target and target:IsValid() and item and item:IsValid() then
+                            if ENABLE_STACK_DELAY then
+                                -- 启用延迟堆叠
+                                player:DoTaskInTime(0.1 * (i-2), function()
+                                    if target and target:IsValid() and item and item:IsValid() then
+                                        if target.components.stackable and 
+                                           not target.components.stackable:IsFull() then
+                                            target.components.stackable:Put(item)
                                         end
                                     end
+                                end)
+                            else
+                                -- 直接堆叠
+                                if target.components.stackable and 
+                                   not target.components.stackable:IsFull() then
+                                    target.components.stackable:Put(item)
                                 end
                             end
                         end
