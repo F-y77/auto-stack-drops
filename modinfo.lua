@@ -29,6 +29,12 @@ api_version = 10
 icon_atlas = "modicon.xml"
 icon = "modicon.tex"
 
+server_filter_tags = {
+    "自动堆叠",
+    "Auto Stack",
+    "Va6gn",
+}
+
 -- 双语配置选项
 local config_labels = {
     stack_interval = is_chinese and "堆叠间隔" or "Stack Interval",
@@ -126,7 +132,7 @@ configuration_options = {
             {description = config_labels.old_to_new, data = "old_to_new", hover = config_labels.old_to_new_hover},
             {description = config_labels.new_to_old, data = "new_to_old", hover = config_labels.new_to_old_hover}   
         },
-        default = "most_first"
+        default = "old_to_new"
     },
     {
         name = "STACK_DELAY",
