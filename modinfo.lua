@@ -9,7 +9,7 @@ local is_chinese = GetLanguage():find("zh") ~= nil
 name = is_chinese and "自动堆叠掉落物" or "Auto Stack Items"
 description = is_chinese and "自动将附近的同类掉落物堆叠在一起" or "Automatically stack nearby similar items"
 author = "Va6gn"
-version = "1.3.0"
+version = "1.5.0"
 
 -- DST 兼容性
 dst_compatible = true
@@ -71,7 +71,13 @@ local config_labels = {
     old_to_new = is_chinese and "老到新" or "Old to New",
     old_to_new_hover = is_chinese and "优先将旧物品堆叠到新物品上" or "Stack older items onto newer items",
     new_to_old = is_chinese and "新到老" or "New to Old",
-    new_to_old_hover = is_chinese and "优先将新物品堆叠到旧物品上" or "Stack newer items onto older items"
+    new_to_old_hover = is_chinese and "优先将新物品堆叠到旧物品上" or "Stack newer items onto older items",
+    stack_mode = is_chinese and "堆叠模式" or "Stack Mode",
+    stack_mode_hover = is_chinese and "选择哪些物品可以堆叠" or "Choose which items can be stacked",
+    stack_all = is_chinese and "堆叠所有物品" or "Stack All Items",
+    stack_all_hover = is_chinese and "堆叠所有可堆叠的物品" or "Stack all stackable items",
+    stack_basic = is_chinese and "仅堆叠基础资源" or "Stack Basic Resources Only",
+    stack_basic_hover = is_chinese and "只堆叠木头、石头、草、树枝和石果等基础资源" or "Only stack logs, rocks, grass, twigs, and flint etc."
 }
 
 -- mod配置选项
@@ -132,7 +138,7 @@ configuration_options = {
             {description = config_labels.old_to_new, data = "old_to_new", hover = config_labels.old_to_new_hover},
             {description = config_labels.new_to_old, data = "new_to_old", hover = config_labels.new_to_old_hover}   
         },
-        default = "old_to_new"
+        default = "most_first"
     },
     {
         name = "STACK_DELAY",
@@ -153,5 +159,15 @@ configuration_options = {
             {description = config_labels.allow_mob_stack_off, data = false, hover = config_labels.allow_mob_stack_off_hover},
         },
         default = false,
+    },
+    {
+        name = "STACK_MODE",
+        label = config_labels.stack_mode,
+        hover = config_labels.stack_mode_hover,
+        options = {
+            {description = config_labels.stack_all, data = "all", hover = config_labels.stack_all_hover},
+            {description = config_labels.stack_basic, data = "basic", hover = config_labels.stack_basic_hover},
+        },
+        default = "all",
     },
 } 

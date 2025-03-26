@@ -11,11 +11,49 @@ local START_DELAY = GetModConfigData("START_DELAY")
 local SORT_METHOD = GetModConfigData("SORT_METHOD")
 local ENABLE_STACK_DELAY = GetModConfigData("STACK_DELAY")
 local ALLOW_MOB_STACK = GetModConfigData("ALLOW_MOB_STACK")
+local STACK_MODE = GetModConfigData("STACK_MODE")
+
+-- 定义基础资源列表
+local BASIC_RESOURCES = {
+    -- 基础资源
+    "log",           -- 木头
+    "rocks",         -- 石头
+    "cutgrass",      -- 草
+    "twigs",         -- 树枝
+    "flint",         -- 石果
+    -- 可以根据需要添加更多基础资源
+    "nitre",         -- 硝石
+    "goldnugget",    -- 金块
+    "cutreeds",      -- 芦苇
+    "charcoal",      -- 木炭
+    "petals",        -- 花瓣
+    "foliage",       -- 蕨叶
+    "rope",          -- 绳子
+    "boards",        -- 木板
+    "cutstone",      -- 石砖
+    "papyrus",       -- 莎草纸
+    "houndstooth",   -- 狗牙
+    "stinger",       -- 蜂刺
+    "silk",          -- 蜘蛛丝
+    "ash",           -- 灰烬
+    "pinecone",      -- 松果
+    "acorn",         -- 橡果
+    "twiggy_nut",    -- 树枝树种
+    "seeds",         -- 种子
+    "ice",           -- 冰
+    "moonrocknugget" -- 月岩
+}
+
+-- 将基础资源转换为查找表，以便快速检查
+local BASIC_RESOURCES_LOOKUP = {}
+for _, prefab in ipairs(BASIC_RESOURCES) do
+    BASIC_RESOURCES_LOOKUP[prefab] = true
+end
 
 -- 在文件开头添加物品生成时间记录
 -- 添加到AddPrefabPostInit之前
 local function RecordSpawnTime(inst)
-    if inst.components.stackable then
+    if inst.components and inst.components.stackable then
         inst.spawn_time = GLOBAL.GetTime()
     end
 end
@@ -60,7 +98,9 @@ local function EnhancedStackItems()
                        not item:HasTag("firefly") and
                        not item.components.health and
                        not item.components.locomotor
-                   )) then
+                   )) and
+                   -- 根据堆叠模式决定是否堆叠该物品
+                   (STACK_MODE == "all" or (STACK_MODE == "basic" and BASIC_RESOURCES_LOOKUP[item.prefab])) then
                     
                     if not grouped[item.prefab] then
                         grouped[item.prefab] = {}
@@ -100,15 +140,25 @@ local function EnhancedStackItems()
                         -- 从老到新排序，使用实体的创建时间
                         table.sort(group, function(a, b)
                             -- 获取物品的存在时间（如果没有则使用当前时间）
-                            local a_time = a.spawn_time or GLOBAL.GetTime()
-                            local b_time = b.spawn_time or GLOBAL.GetTime()
+                            local a_time = a.spawn_time or 0
+                            local b_time = b.spawn_time or 0
+                            -- 防止比较nil值导致崩溃
+                            if a_time == b_time then
+                                return false -- 相等时保持原顺序
+                            end
                             -- 较新的物品（时间值大）放在前面作为目标
                             return b_time < a_time
                         end)
                     elseif SORT_METHOD == "new_to_old" then
                         -- 从新到老排序，使用实体的创建时间
                         table.sort(group, function(a, b)
-                            return a.spawn_time < b.spawn_time
+                            local a_time = a.spawn_time or 0
+                            local b_time = b.spawn_time or 0
+                            -- 防止比较nil值导致崩溃
+                            if a_time == b_time then
+                                return false -- 相等时保持原顺序
+                            end
+                            return a_time < b_time
                         end)
                     end
                     
@@ -116,22 +166,28 @@ local function EnhancedStackItems()
                     local target = group[1]
                     for i = 2, #group do
                         local item = group[i]
+                        -- 增加额外的安全检查
                         if target and target:IsValid() and item and item:IsValid() then
-                            if ENABLE_STACK_DELAY then
-                                -- 启用延迟堆叠
-                                player:DoTaskInTime(0.1 * (i-2), function()
-                                    if target and target:IsValid() and item and item:IsValid() then
-                                        if target.components.stackable and 
-                                           not target.components.stackable:IsFull() then
-                                            target.components.stackable:Put(item)
+                            -- 确保目标和物品都有必要的组件
+                            if target.components and target.components.stackable and 
+                               item.components and item.components.stackable then
+                                
+                                if ENABLE_STACK_DELAY then
+                                    -- 启用延迟堆叠
+                                    player:DoTaskInTime(0.1 * (i-2), function()
+                                        -- 再次检查物品是否有效
+                                        if target and target:IsValid() and item and item:IsValid() then
+                                            if target.components.stackable and 
+                                               not target.components.stackable:IsFull() then
+                                                target.components.stackable:Put(item)
+                                            end
                                         end
+                                    end)
+                                else
+                                    -- 直接堆叠
+                                    if not target.components.stackable:IsFull() then
+                                        target.components.stackable:Put(item)
                                     end
-                                end)
-                            else
-                                -- 直接堆叠
-                                if target.components.stackable and 
-                                   not target.components.stackable:IsFull() then
-                                    target.components.stackable:Put(item)
                                 end
                             end
                         end
