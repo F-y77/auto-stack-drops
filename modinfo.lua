@@ -9,7 +9,7 @@ local is_chinese = GetLanguage():find("zh") ~= nil
 name = is_chinese and "自动堆叠掉落物" or "Auto Stack Items"
 description = is_chinese and "自动将附近的同类掉落物堆叠在一起" or "Automatically stack nearby similar items"
 author = "Va6gn"
-version = "1.5.0"
+version = "1.6.0"
 
 -- DST 兼容性
 dst_compatible = true
@@ -77,7 +77,9 @@ local config_labels = {
     stack_all = is_chinese and "堆叠所有物品" or "Stack All Items",
     stack_all_hover = is_chinese and "堆叠所有可堆叠的物品" or "Stack all stackable items",
     stack_basic = is_chinese and "仅堆叠基础资源" or "Stack Basic Resources Only",
-    stack_basic_hover = is_chinese and "只堆叠木头、石头、草、树枝和石果等基础资源" or "Only stack logs, rocks, grass, twigs, and flint etc."
+    stack_basic_hover = is_chinese and "只堆叠木头、石头、草、树枝和石果等基础资源" or "Only stack logs, rocks, grass, twigs, and flint etc.",
+    stack_basic_winter = is_chinese and "基础资源+冬季盛宴物品" or "Basic Resources + Winter Feast Items",
+    stack_basic_winter_hover = is_chinese and "堆叠基础资源和冬季盛宴的物品" or "Stack basic resources and Winter Feast items"
 }
 
 -- mod配置选项
@@ -167,6 +169,7 @@ configuration_options = {
         options = {
             {description = config_labels.stack_all, data = "all", hover = config_labels.stack_all_hover},
             {description = config_labels.stack_basic, data = "basic", hover = config_labels.stack_basic_hover},
+            {description = config_labels.stack_basic_winter, data = "basic_winter", hover = config_labels.stack_basic_winter_hover},
         },
         default = "all",
     },

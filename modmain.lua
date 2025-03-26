@@ -20,8 +20,13 @@ local BASIC_RESOURCES = {
     "rocks",         -- 石头
     "cutgrass",      -- 草
     "twigs",         -- 树枝
-    "flint",         -- 石果
+    "flint",         -- 燧石
+    
     -- 可以根据需要添加更多基础资源
+
+    "rock_avocado_fruit", --石果
+    "rock_avocado_fruit_ripe", --熟石果
+
     "nitre",         -- 硝石
     "goldnugget",    -- 金块
     "cutreeds",      -- 芦苇
@@ -44,10 +49,80 @@ local BASIC_RESOURCES = {
     "moonrocknugget" -- 月岩
 }
 
+-- 定义冬季盛宴物品列表
+local WINTER_FEAST_ITEMS = {
+    "winter_food1",      -- 姜饼人
+    "winter_food2",      -- 糖果手杖
+    "winter_food3",      -- 永恒水果蛋糕
+    "winter_food4",      -- 巧克力饼干
+    "winter_food5",      -- 冬季浆果塔
+    "winter_food6",      -- 胡萝卜蛋糕
+    "winter_food7",      -- 布丁
+    "winter_food8",      -- 甜甜圈
+    "winter_food9",      -- 薄荷糖
+    "festive_plant",     -- 节日植物
+    "festive_tree_item", -- 节日树
+    "festive_tree_planter", -- 节日树盆栽
+    "winter_ornament_plain1", -- 普通装饰品1
+    "winter_ornament_plain2", -- 普通装饰品2
+    "winter_ornament_plain3", -- 普通装饰品3
+    "winter_ornament_plain4", -- 普通装饰品4
+    "winter_ornament_plain5", -- 普通装饰品5
+    "winter_ornament_plain6", -- 普通装饰品6
+    "winter_ornament_fancy1", -- 精美装饰品1
+    "winter_ornament_fancy2", -- 精美装饰品2
+    "winter_ornament_fancy3", -- 精美装饰品3
+    "winter_ornament_fancy4", -- 精美装饰品4
+    "winter_ornament_fancy5", -- 精美装饰品5
+    "winter_ornament_fancy6", -- 精美装饰品6
+    "winter_ornament_light1", -- 节日灯1
+    "winter_ornament_light2", -- 节日灯2
+    "winter_ornament_light3", -- 节日灯3
+    "winter_ornament_light4", -- 节日灯4
+    "winter_ornament_light5", -- 节日灯5
+    "winter_ornament_light6", -- 节日灯6
+    "winter_ornament_light7", -- 节日灯7
+    "winter_ornament_light8", -- 节日灯8
+    "gift",              -- 礼物
+    "giftwrap",          -- 礼物包装
+    "winter_gingerbreadcookie", -- 姜饼饼干
+    "winter_ornamentstar",      -- 星星装饰
+    "winter_ornamentbutterfly", -- 蝴蝶装饰
+    "winter_ornamentdeerhead",  -- 鹿头装饰
+    -- 添加所有boss装饰品
+    "winter_ornament_boss_bearger",
+    "winter_ornament_boss_deerclops",
+    "winter_ornament_boss_moose",
+    "winter_ornament_boss_dragonfly",
+    "winter_ornament_boss_beequeen",
+    "winter_ornament_boss_toadstool",
+    "winter_ornament_boss_antlion",
+    "winter_ornament_boss_klaus",
+    "winter_ornament_boss_fuelweaver",
+    "winter_ornament_boss_malbatross",
+    "winter_ornament_boss_crabking",
+    "winter_ornament_boss_eyeofterror",
+    "winter_ornament_boss_twinofterror",
+    "winter_ornament_boss_wagstaff",
+    "winter_ornament_boss_daywalker",
+    "winter_ornament_boss_krampus",
+    "winter_ornament_boss_minotaur",
+    "winter_ornament_boss_pearl",
+    "winter_ornament_boss_celestialchampion",
+    "winter_ornament_boss_alterguardian",
+    "winter_ornament_boss_stalker"
+}
+
 -- 将基础资源转换为查找表，以便快速检查
 local BASIC_RESOURCES_LOOKUP = {}
 for _, prefab in ipairs(BASIC_RESOURCES) do
     BASIC_RESOURCES_LOOKUP[prefab] = true
+end
+
+-- 将冬季盛宴物品转换为查找表
+local WINTER_FEAST_ITEMS_LOOKUP = {}
+for _, prefab in ipairs(WINTER_FEAST_ITEMS) do
+    WINTER_FEAST_ITEMS_LOOKUP[prefab] = true
 end
 
 -- 在文件开头添加物品生成时间记录
@@ -100,7 +175,9 @@ local function EnhancedStackItems()
                        not item.components.locomotor
                    )) and
                    -- 根据堆叠模式决定是否堆叠该物品
-                   (STACK_MODE == "all" or (STACK_MODE == "basic" and BASIC_RESOURCES_LOOKUP[item.prefab])) then
+                   (STACK_MODE == "all" or 
+                    (STACK_MODE == "basic" and BASIC_RESOURCES_LOOKUP[item.prefab]) or
+                    (STACK_MODE == "basic_winter" and (BASIC_RESOURCES_LOOKUP[item.prefab] or WINTER_FEAST_ITEMS_LOOKUP[item.prefab]))) then
                     
                     if not grouped[item.prefab] then
                         grouped[item.prefab] = {}
